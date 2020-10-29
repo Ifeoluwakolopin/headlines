@@ -17,7 +17,9 @@ RSS_FEED = {
 
 DEFAULTS = {
     "publication":"bbc",
-    "city":"Lagos,Nigeria"
+    "city":"Lagos,Nigeria",
+    "currency_from":"GBP",
+    "currency_to":"USD"
 }
 
 @app.route("/")
@@ -32,7 +34,21 @@ def home():
     if not city:
         city = DEFAULTS["city"]
     weather = get_weather(city)
-    return render_template("home.html", articles=articles, weather=weather)
+    # Get currencies to be converted from user
+    currency_from = request.args.get("currency_from")
+    currency_to = request.args.get("currency_to")
+    if not currency_from:
+        currency_from = DEFAULTS["currency_from"]
+    if not currency_to:
+        currency_to = DEFAULTS["currency_to"]
+    rate, currencies = get_rate(currency_from, currency_to)
+
+    return render_template(
+        "home.html", articles=articles,
+        weather=weather, currency_from=currency_from,
+        currency_to=currency_to, rate=rate,
+        currencies=sorted(currencies)
+    )
 
 
 def get_news(query):
@@ -59,6 +75,14 @@ def get_weather(query):
         }
     return weather
 
+def get_rate(frm, to):
+    currency_url = "https://openexchangerates.org//api/latest.json"
+    r = requests.get(currency_url, params={
+        "app_id":os.getenv("EXCHANGE_API_KEY")
+    }).json().get("rates")
+    frm_rate = r.get(frm.upper())
+    to_rate = r.get(to.upper())
+    return (round(to_rate/frm_rate, 3), r.keys())
 
 if __name__ == '__main__':
     app.run(port=5000, debug=True)
