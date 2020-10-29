@@ -15,18 +15,33 @@ RSS_FEED = {
     "iol":"http://www.iol.co.za/cmlink/1.640"
 }
 
+DEFAULTS = {
+    "publication":"bbc",
+    "city":"Lagos,Nigeria"
+}
+
 @app.route("/")
-def get_news(publication="bbc"):
-    query = request.args.get("publication")
+def home():
+    # Get headlines, based on user input
+    publication = request.args.get("publication")
+    if not publication:
+        publication = DEFAULTS["publication"]
+    articles = get_news(publication)
+    # Get weather from location based on user input
+    city = request.args.get("city")
+    if not city:
+        city = DEFAULTS["city"]
+    weather = get_weather(city)
+    return render_template("home.html", articles=articles, weather=weather)
+
+
+def get_news(query):
     if not query or query.lower() not in RSS_FEED:
         publication = "bbc"
     else:
         publication = query.lower()
     feed = feedparser.parse(RSS_FEED[publication])
-    weather = get_weather("Lagos,Nigeria")
-    return render_template(
-        "home.html", articles=feed["entries"], weather=weather
-    )
+    return feed["entries"]
 
 def get_weather(query):
     api_url = "http://api.openweathermap.org/data/2.5/weather"
@@ -40,7 +55,7 @@ def get_weather(query):
         weather = {
             "description": r["weather"][0]["description"],
             "temperature": r["main"]["temp"],
-            "city":r["name"]
+            "city":r["name"], "country":r["sys"]["country"]
         }
     return weather
 
