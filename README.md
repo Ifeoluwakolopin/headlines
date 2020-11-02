@@ -5,6 +5,3 @@ first practice project with flask.
 - Current weather for any specified location.
 - Exchange rate for any currencies
 - RSS Feed from top newshouses. (bbc, cnn, fox)
-
-
-P.S: frontend designs are improvised.
